@@ -1,8 +1,6 @@
 package de.bustinjieber.main.yahoo;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.Locale;
+import de.bustinjieber.main.scraper.Scraper;
 
 /**
  * Helper Data-Class for storing data relating to a certain Ticker
@@ -14,10 +12,11 @@ public class Ticker {
     private Float price;
     private Float change;
     private Float changePercentage;
+    private Scraper scraper;
     /**
      * statistics-content 1/2
      */
-    private Long volume;
+    private Float volume;
     private Float avgVolume;
     private Float[] daysRange;
     private Float open;
@@ -27,8 +26,12 @@ public class Ticker {
      * statistics-content 2/2 - needs to be checked if null, as they don't always exit (example: S&P 500)
      */
     private Float marketCap;
+    private Float beta5YM;
 
-    public Ticker(){}
+    public Ticker(String t){
+        this.ticker = t;
+        scraper = new Scraper(this);
+    }
 
     public Ticker(String t, String qT, Float p, Float c, Float cP){
         this.ticker = t;
@@ -53,7 +56,8 @@ public class Ticker {
                + "Avg. Volume: " + getAvgVolume() + "\n"
                + "Market Cap: $ " + getMarketCap() + "\n"
                + "Days Range: $ " + getDaysRange()[0] + " - $ " + getDaysRange()[1] + "\n"
-               + "52 Week Range: $ " + getFiftyTwoWeekRange()[0] + " - $ " + getFiftyTwoWeekRange()[1] + "\n";
+               + "52 Week Range: $ " + getFiftyTwoWeekRange()[0] + " - $ " + getFiftyTwoWeekRange()[1] + "\n"
+               + "Beta (5Y Monthly): " + getBeta5YM() + "\n";
     }
 
     public String getTicker() {
@@ -65,6 +69,7 @@ public class Ticker {
     }
 
     public String getQuoteTitle(){
+        scraper.scrapeTitle();
         return quoteTitle;
     }
 
@@ -73,6 +78,7 @@ public class Ticker {
     }
 
     public Float getPrice() {
+        scraper.scrapePrice();
         return price;
     }
 
@@ -81,6 +87,7 @@ public class Ticker {
     }
 
     public Float getChange() {
+        scraper.scrapeChange();
         return change;
     }
 
@@ -89,6 +96,7 @@ public class Ticker {
     }
 
     public Float getChangePercentage() {
+        scraper.scrapeChangePct();
         return changePercentage;
     }
 
@@ -96,15 +104,17 @@ public class Ticker {
         this.changePercentage = changePercentage;
     }
 
-    public Long getVolume() {
+    public Float getVolume() {
+        scraper.scrapeVolume();
         return volume;
     }
 
-    public void setVolume(Long volume) {
+    public void setVolume(Float volume) {
         this.volume = volume;
     }
 
     public Float getAvgVolume() {
+        scraper.scrapeAvgVolume();
         return avgVolume;
     }
 
@@ -113,6 +123,7 @@ public class Ticker {
     }
 
     public Float[] getDaysRange() {
+        scraper.scrapeDayRange();
         return daysRange;
     }
 
@@ -121,6 +132,7 @@ public class Ticker {
     }
 
     public Float getOpen() {
+        scraper.scrapeOpen();
         return open;
     }
 
@@ -129,6 +141,7 @@ public class Ticker {
     }
 
     public Float getPrevClose() {
+        scraper.scrapePrevClose();
         return prevClose;
     }
 
@@ -137,6 +150,7 @@ public class Ticker {
     }
 
     public Float[] getFiftyTwoWeekRange() {
+        scraper.scrapeFiftyTwoWeekRange();
         return fiftyTwoWeekRange;
     }
 
@@ -145,10 +159,28 @@ public class Ticker {
     }
 
     public Float getMarketCap() {
+        scraper.scrapeMarketCap();
         return marketCap;
     }
 
     public void setMarketCap(Float marketCap) {
         this.marketCap = marketCap;
+    }
+
+    public Scraper getScraper() {
+        return scraper;
+    }
+
+    public void setScraper(Scraper scraper) {
+        this.scraper = scraper;
+    }
+
+    public Float getBeta5YM() {
+        scraper.scrapeBeta5YM();
+        return beta5YM;
+    }
+
+    public void setBeta5YM(Float beta5YM) {
+        this.beta5YM = beta5YM;
     }
 }
