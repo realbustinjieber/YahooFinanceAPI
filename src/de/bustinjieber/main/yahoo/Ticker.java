@@ -33,14 +33,6 @@ public class Ticker {
         scraper = new Scraper(this);
     }
 
-    public Ticker(String t, String qT, Float p, Float c, Float cP){
-        this.ticker = t;
-        this.quoteTitle = qT;
-        this.price = p;
-        this.change = c;
-        this.changePercentage = cP;
-    }
-
     /**
      *
      * @return Basic information about the ticker.

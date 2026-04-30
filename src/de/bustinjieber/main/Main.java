@@ -10,5 +10,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         Ticker t1 = new Ticker("BBAI");
         System.out.println(t1.toString());
+
+        t1.getScraper().scrapeHistoricalDataMax();
     }
 }
