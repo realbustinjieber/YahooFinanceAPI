@@ -2,8 +2,8 @@ package de.bustinjieber.main.yahoo;
 
 import de.bustinjieber.main.scraper.Scraper;
 
-import java.time.LocalDate;
-import java.util.HashMap;
+import java.util.Date;
+import java.util.TreeMap;
 
 /**
  * Helper Data-Class for storing data relating to a certain Ticker
@@ -35,12 +35,12 @@ public class Ticker {
      * historical-content - needs to be implemented correctly. (key: date, value: xyz)
      * open, high, low, close, adjClode, volume
      */
-    private HashMap<LocalDate, Float> historicalOpen = new HashMap<>();
-    private HashMap<LocalDate, Float> historicalHigh = new HashMap<>();
-    private HashMap<LocalDate, Float> historicalLow = new HashMap<>();
-    private HashMap<LocalDate, Float> historicalClose = new HashMap<>();
-    private HashMap<LocalDate, Float> historicalAdjClose = new HashMap<>();
-    private HashMap<LocalDate, Float> historicalVolume = new HashMap<>();
+    private TreeMap<Date, Float> historicalOpen = new TreeMap<Date, Float>();
+    private TreeMap<Date, Float> historicalHigh = new TreeMap<Date, Float>();
+    private TreeMap<Date, Float> historicalLow = new TreeMap<Date, Float>();
+    private TreeMap<Date, Float> historicalClose = new TreeMap<Date, Float>();
+    private TreeMap<Date, Float> historicalAdjClose = new TreeMap<Date, Float>();
+    private TreeMap<Date, Float> historicalVolume = new TreeMap<Date, Float>();
     private boolean historicalsExist = false;
 
     /**
@@ -53,7 +53,6 @@ public class Ticker {
     }
 
     /**
-     *
      * @return Basic information about the ticker.
      */
     public String toString(){
@@ -207,69 +206,69 @@ public class Ticker {
         getScraper().scrapeHistoricals(f, period1, period2);
     }
 
-    public HashMap<LocalDate, Float> getHistoricalOpen() {
+    public TreeMap<Date, Float> getHistoricalOpen() {
         if(!doHistoricalsExist()){
             throw new RuntimeException("You have to run 'getHistoricals' first!");
         }
         return historicalOpen;
     }
 
-    public void putHistoricalOpen(LocalDate d, Float f){
+    public void putHistoricalOpen(Date d, Float f){
         this.historicalOpen.put(d,f);
     }
 
-    public HashMap<LocalDate, Float> getHistoricalHigh() {
+    public TreeMap<Date, Float> getHistoricalHigh() {
         if(!doHistoricalsExist()){
             throw new RuntimeException("You have to run 'getHistoricals' first!");
         }
         return historicalHigh;
     }
 
-    public void putHistoricalHigh(LocalDate d, Float f){
+    public void putHistoricalHigh(Date d, Float f){
         this.historicalHigh.put(d,f);
     }
 
-    public HashMap<LocalDate, Float> getHistoricalLow() {
+    public TreeMap<Date, Float> getHistoricalLow() {
         if(!doHistoricalsExist()){
             throw new RuntimeException("You have to run 'getHistoricals' first!");
         }
         return historicalLow;
     }
 
-    public void putHistoricalLow(LocalDate d, Float f){
+    public void putHistoricalLow(Date d, Float f){
         this.historicalLow.put(d,f);
     }
 
-    public HashMap<LocalDate, Float> getHistoricalClose() {
+    public TreeMap<Date, Float> getHistoricalClose() {
         if(!doHistoricalsExist()){
             throw new RuntimeException("You have to run 'getHistoricals' first!");
         }
         return historicalClose;
     }
 
-    public void putHistoricalClose(LocalDate d, Float f){
+    public void putHistoricalClose(Date d, Float f){
         this.historicalClose.put(d,f);
     }
 
-    public HashMap<LocalDate, Float> getHistoricalAdjClose() {
+    public TreeMap<Date, Float> getHistoricalAdjClose() {
         if(!doHistoricalsExist()){
             throw new RuntimeException("You have to run 'getHistoricals' first!");
         }
         return historicalAdjClose;
     }
 
-    public void putHistoricalAdjClose(LocalDate d, Float f){
+    public void putHistoricalAdjClose(Date d, Float f){
         this.historicalAdjClose.put(d,f);
     }
 
-    public HashMap<LocalDate, Float> getHistoricalVolume() {
+    public TreeMap<Date, Float> getHistoricalVolume() {
         if(!doHistoricalsExist()){
             throw new RuntimeException("You have to run 'getHistoricals' first!");
         }
         return historicalVolume;
     }
 
-    public void putHistoricalVolume(LocalDate d, Float f){
+    public void putHistoricalVolume(Date d, Float f){
         this.historicalVolume.put(d,f);
     }
 

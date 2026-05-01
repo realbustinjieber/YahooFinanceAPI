@@ -11,11 +11,9 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 public class Scraper {
 
@@ -83,7 +81,7 @@ public class Scraper {
 
     public Scraper(Ticker t){
         this.ticker = t;
-        this.debugPrinter = new DebugPrinter(true);
+        this.debugPrinter = new DebugPrinter(false);
         getDocument("https://finance.yahoo.com/quote/" + ticker.getTicker());
     }
 
@@ -232,13 +230,14 @@ public class Scraper {
     }
 
     /**
-     * Converts the DateString given by Hist-Data into a LocalTime-Obj.
-     * @param s String (ex: "Dec 10, 2002") that needs to be converted into a LocalDate.
+     * Converts the DateString given by Hist-Data into a Date-Obj. (using American.Central Time)
+     * @param s String (ex: "Dec 10, 2002") that needs to be converted into a Date.
      * @return LocalDate in correct format (ex: "2002-12-10").
      */
-    private LocalDate convertLocalDate(String s){
+    private Date convertLocalDate(String s){
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM d, uuuu", Locale.ENGLISH);
-        return LocalDate.parse(s, formatter);
+        LocalDate localDate = LocalDate.parse(s, formatter);
+        return Date.from(localDate.atStartOfDay(ZoneId.of("America/Chicago")).toInstant());
     }
 
     /**
@@ -367,5 +366,9 @@ public class Scraper {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public DebugPrinter getDebugPrinter(){
+        return this.debugPrinter;
     }
 }
