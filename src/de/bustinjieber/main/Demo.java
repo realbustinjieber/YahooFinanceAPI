@@ -14,7 +14,7 @@ import java.util.List;
 public class Demo {
 
     public static void main(String[] args) {
-        Ticker t1 = new Ticker("UPS");
+        Ticker t1 = new Ticker("AAPL");
         t1.getHistoricals(Frequency.Monthly);
 
         // Showcase of the current data

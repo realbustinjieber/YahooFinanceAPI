@@ -202,6 +202,7 @@ public class Scraper {
         Element marketCapElem = doc.selectFirst("[data-field=marketCap]");
 
         if(marketCapElem == null) return;
+        if(marketCapElem.text().contains("--"))return;
         String mC_s = marketCapElem.text().replace(",","");
         float mC_f = 0f;
 
@@ -218,7 +219,7 @@ public class Scraper {
         Element labelSpan = doc.select("span:contains(Beta (5Y Monthly))").first();
         if (labelSpan == null)return;
         Element valueSpan = labelSpan.nextElementSibling();
-        if(valueSpan == null)return;
+        if(valueSpan == null || valueSpan.text().contains("--"))return;
 
         ticker.setBeta5YM(
                 Float.parseFloat(
