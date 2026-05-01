@@ -1,7 +1,7 @@
 package de.bustinjieber.main.yahoo;
 
 /**
- * Converts human-readable intervals into less readable intervals, used for the historical-url.
+ * Converts human-readable intervals into less readable intervals, used for the historical-url (Daily, Weekly, Monthly).
  */
 public enum Frequency {
     Daily("1d"),

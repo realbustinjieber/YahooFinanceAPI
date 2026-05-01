@@ -41,7 +41,12 @@ public class Ticker {
     private HashMap<LocalDate, Float> historicalClose = new HashMap<>();
     private HashMap<LocalDate, Float> historicalAdjClose = new HashMap<>();
     private HashMap<LocalDate, Float> historicalVolume = new HashMap<>();
+    private boolean historicalsExist = false;
 
+    /**
+     * Initializes a new Ticker (with the according Symbol) and gives it its own scraper.
+     * @param t Symbol needed to indetify the ticker (ex: AAPL)
+     */
     public Ticker(String t){
         this.ticker = t;
         scraper = new Scraper(this);
@@ -68,10 +73,6 @@ public class Ticker {
 
     public String getTicker() {
         return ticker;
-    }
-
-    public void setTicker(String ticker) {
-        this.ticker = ticker;
     }
 
     public String getQuoteTitle(){
@@ -177,10 +178,6 @@ public class Ticker {
         return scraper;
     }
 
-    public void setScraper(Scraper scraper) {
-        this.scraper = scraper;
-    }
-
     public Float getBeta5YM() {
         scraper.scrapeBeta5YM();
         return beta5YM;
@@ -190,7 +187,30 @@ public class Ticker {
         this.beta5YM = beta5YM;
     }
 
+    /**
+     * Scrapes the historical Data needed for functions such as: getHistoricalOpen() etc.
+     * @param f Monthly, Weekly, Daily interval.
+     */
+    public void getHistoricals(Frequency f){
+        historicalsExist = true;
+        getScraper().scrapeHistoricals(f);
+    }
+
+    /**
+     * Scrapes the historical Data needed for functions such as: getHistoricalOpen() etc.
+     * @param f Monthly, Weekly, Daily interval.
+     * @param period1 starting period
+     * @param period2 ending period
+     */
+    public void getHistoricals(Frequency f, int period1, int period2){
+        historicalsExist = true;
+        getScraper().scrapeHistoricals(f, period1, period2);
+    }
+
     public HashMap<LocalDate, Float> getHistoricalOpen() {
+        if(!doHistoricalsExist()){
+            throw new RuntimeException("You have to run 'getHistoricals' first!");
+        }
         return historicalOpen;
     }
 
@@ -199,6 +219,9 @@ public class Ticker {
     }
 
     public HashMap<LocalDate, Float> getHistoricalHigh() {
+        if(!doHistoricalsExist()){
+            throw new RuntimeException("You have to run 'getHistoricals' first!");
+        }
         return historicalHigh;
     }
 
@@ -207,6 +230,9 @@ public class Ticker {
     }
 
     public HashMap<LocalDate, Float> getHistoricalLow() {
+        if(!doHistoricalsExist()){
+            throw new RuntimeException("You have to run 'getHistoricals' first!");
+        }
         return historicalLow;
     }
 
@@ -215,6 +241,9 @@ public class Ticker {
     }
 
     public HashMap<LocalDate, Float> getHistoricalClose() {
+        if(!doHistoricalsExist()){
+            throw new RuntimeException("You have to run 'getHistoricals' first!");
+        }
         return historicalClose;
     }
 
@@ -223,6 +252,9 @@ public class Ticker {
     }
 
     public HashMap<LocalDate, Float> getHistoricalAdjClose() {
+        if(!doHistoricalsExist()){
+            throw new RuntimeException("You have to run 'getHistoricals' first!");
+        }
         return historicalAdjClose;
     }
 
@@ -231,10 +263,17 @@ public class Ticker {
     }
 
     public HashMap<LocalDate, Float> getHistoricalVolume() {
+        if(!doHistoricalsExist()){
+            throw new RuntimeException("You have to run 'getHistoricals' first!");
+        }
         return historicalVolume;
     }
 
     public void putHistoricalVolume(LocalDate d, Float f){
         this.historicalVolume.put(d,f);
+    }
+
+    public boolean doHistoricalsExist() {
+        return historicalsExist;
     }
 }

@@ -8,6 +8,6 @@ public class Main {
     public static void main(String[] args) {
         Ticker t1 = new Ticker("UPS");
 
-        t1.getScraper().scrapeHistoricalsMax(Frequency.Monthly);
+        t1.getHistoricals(Frequency.Monthly);
     }
 }

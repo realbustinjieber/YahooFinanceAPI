@@ -242,11 +242,73 @@ public class Scraper {
     }
 
     /**
-     * Scrapes /history for all historical Data
+     * Scrapes /history for all historical data
+     * @param f Monthly, Weekly, Daily interval
      * (using 0 & 9999999999 as periods returns the max length, without browser interaction)
      */
-    public void scrapeHistoricalsMax(Frequency i){
-        String url = "https://finance.yahoo.com/quote/" + ticker.getTicker() + "/history/?period1=0&period2=9999999999&frequency=" + i.getFrequency();
+    public void scrapeHistoricals(Frequency f){
+        String url = "https://finance.yahoo.com/quote/" + ticker.getTicker() + "/history/?period1=0&period2=9999999999&frequency=" + f.getFrequency();
+        getDocumentWithCookies(url);
+
+        Element tableContainer = doc.select("[data-testid=history-table]").first();
+        if (tableContainer != null) {
+            Elements rows = tableContainer.select("table tbody tr");
+            for (Element row : rows) {
+                Elements columns = row.select("td");
+                if (columns.size() >= 7) {
+                    String date = columns.get(0).text();
+                    ticker.putHistoricalOpen(
+                            convertLocalDate(date),
+                            Float.parseFloat(
+                                    columns.get(1).text().replace(",","")
+                            )
+                    );
+                    ticker.putHistoricalHigh(
+                            convertLocalDate(date),
+                            Float.parseFloat(
+                                    columns.get(2).text().replace(",","")
+                            )
+                    );
+                    ticker.putHistoricalLow(
+                            convertLocalDate(date),
+                            Float.parseFloat(
+                                    columns.get(3).text().replace(",","")
+                            )
+                    );
+                    ticker.putHistoricalClose(
+                            convertLocalDate(date),
+                            Float.parseFloat(
+                                    columns.get(4).text().replace(",","")
+                            )
+                    );
+                    ticker.putHistoricalAdjClose(
+                            convertLocalDate(date),
+                            Float.parseFloat(
+                                    columns.get(5).text().replace(",","")
+                            )
+                    );
+                    ticker.putHistoricalVolume(
+                            convertLocalDate(date),
+                            Float.parseFloat(
+                                    columns.get(6).text().replace(",","")
+                            )
+                    );
+                }
+            }
+        }
+        //Document auf standard zurücksetzen:
+        getDocument("https://finance.yahoo.com/quote/" + ticker.getTicker());
+    }
+
+    /**
+     * Scrapes /history for all historical data, but only in between the selected periods.
+     * @param f Monthly, Weekly, Daily interval.
+     * @param period1 starting period
+     * @param period2 ending period
+     * (using 0 & 9999999999 as periods returns the max length, without browser interaction)
+     */
+    public void scrapeHistoricals(Frequency f, int period1, int period2){
+        String url = "https://finance.yahoo.com/quote/" + ticker.getTicker() + "/history/?period1=" + period1 + "&period2=" + period2 + "&frequency=" + f.getFrequency();
         getDocumentWithCookies(url);
 
         Element tableContainer = doc.select("[data-testid=history-table]").first();
@@ -305,9 +367,5 @@ public class Scraper {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public Ticker getTicker(){
-        return this.ticker;
     }
 }
