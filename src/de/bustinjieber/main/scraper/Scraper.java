@@ -1,13 +1,20 @@
 package de.bustinjieber.main.scraper;
 
+import com.microsoft.playwright.*;
+import com.microsoft.playwright.options.Cookie;
+import de.bustinjieber.main.yahoo.Frequency;
 import de.bustinjieber.main.yahoo.Ticker;
-import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class Scraper {
@@ -15,8 +22,9 @@ public class Scraper {
     private String id;
     private Ticker ticker;
     private Document doc;
+    private DebugPrinter debugPrinter;
 
-    public void getDocument(String url){
+    private void getDocument(String url){
         try {
             doc = Jsoup.connect(url)
                     .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36")
@@ -30,19 +38,35 @@ public class Scraper {
         }
     }
 
-    public void getDocumentWithCookies(String url){
+    /**
+     * Connects to yahoo via playwright & saves the received cookies inorder to scrape the website with jsoup
+     * using another connection.
+     * @param url the url used to connect to yahoo.
+     */
+    private void getDocumentWithCookies(String url){
+        debugPrinter.print(this, url);
         try {
-            Connection.Response resp = Jsoup.connect(url)
-                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36")
-                    .header("Accept-Language", "en-US,en;q=0.9")
-                    .header("Accept", "text/html")
-                    .referrer("https://www.google.com/")
-                    .timeout(15_000)
-                    .followRedirects(true)
-                    .execute();
+            // extract url via playwright and accepting the cookie popup, thus generating the needed breadcrumb etc.
+            Map<String, String> cookies = new HashMap<>();
+            try (Playwright playwright = Playwright.create()) {
+                Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
+                BrowserContext context = browser.newContext();
+                Page page = context.newPage();
 
-            Map<String,String> cookies = resp.cookies();
+                page.navigate(url);
 
+                try {
+                    page.click("button[name='agree']", new Page.ClickOptions().setTimeout(3000));
+                } catch (Exception ignored) {}
+
+                List<Cookie> playwrightCookies = context.cookies();
+                for (Cookie cookie : playwrightCookies) {
+                    cookies.put(cookie.name, cookie.value);
+                }
+                browser.close();
+            }
+
+            // using the generated cookies in order to scrape the table via JSoup (way faster than using playwright)
             doc = Jsoup.connect(url)
                     .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36")
                     .header("Accept-Language", "en-US,en;q=0.9")
@@ -52,8 +76,6 @@ public class Scraper {
                     .timeout(20_000)
                     .followRedirects(true)
                     .get();
-
-            System.out.println(doc);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -61,6 +83,7 @@ public class Scraper {
 
     public Scraper(Ticker t){
         this.ticker = t;
+        this.debugPrinter = new DebugPrinter(true);
         getDocument("https://finance.yahoo.com/quote/" + ticker.getTicker());
     }
 
@@ -182,7 +205,7 @@ public class Scraper {
 
         if(marketCapElem == null) return;
         String mC_s = marketCapElem.text().replace(",","");
-        Float mC_f = 0f;
+        float mC_f = 0f;
 
         if(mC_s.contains("B")){
             mC_f = Float.parseFloat(mC_s.replace("B", "")) * 1000000000000f;
@@ -209,41 +232,69 @@ public class Scraper {
     }
 
     /**
-     * Wirft gerade noch 404 - GRRR
+     * Converts the DateString given by Hist-Data into a LocalTime-Obj.
+     * @param s String (ex: "Dec 10, 2002") that needs to be converted into a LocalDate.
+     * @return LocalDate in correct format (ex: "2002-12-10").
      */
-    public void scrapeHistoricalDataMax(){
-        // Hier werden unix-timecodes verwendet (theoretishc kann man beides auch auf beliebige werte setzen, selbst wenn diese größer als tatsächlich bestehende daten sind.
-        int period1 = 1527255000;
-        int period2 = 1777472647;
-        String url = "https://finance.yahoo.com/quote/" + ticker.getTicker() + "/history/?period1=" + period1 + "&period2=" + period2;
+    private LocalDate convertLocalDate(String s){
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM d, uuuu", Locale.ENGLISH);
+        return LocalDate.parse(s, formatter);
+    }
+
+    /**
+     * Scrapes /history for all historical Data
+     * (using 0 & 9999999999 as periods returns the max length, without browser interaction)
+     */
+    public void scrapeHistoricalsMax(Frequency i){
+        String url = "https://finance.yahoo.com/quote/" + ticker.getTicker() + "/history/?period1=0&period2=9999999999&frequency=" + i.getFrequency();
         getDocumentWithCookies(url);
 
         Element tableContainer = doc.select("[data-testid=history-table]").first();
-
         if (tableContainer != null) {
-            // 2. Alle Zeilen innerhalb des Bodys holen
             Elements rows = tableContainer.select("table tbody tr");
-
             for (Element row : rows) {
                 Elements columns = row.select("td");
-
-                // Sicherstellen, dass die Zeile Daten enthält
                 if (columns.size() >= 7) {
-                    String date = columns.get(0).text();     // "Dec 10, 2002"
-                    String open = columns.get(1).text();     // "0.26"
-                    String high = columns.get(2).text();     // "0.28"
-                    String low = columns.get(3).text();      // "0.26"
-                    String close = columns.get(4).text();    // "0.27"
-                    String adjClose = columns.get(5).text(); // "0.23"
-                    String volume = columns.get(6).text();   // "308,610,400"
-
-                    System.out.println(date + " | Close: " + close + " | Vol: " + volume);
+                    String date = columns.get(0).text();
+                    ticker.putHistoricalOpen(
+                            convertLocalDate(date),
+                            Float.parseFloat(
+                                    columns.get(1).text().replace(",","")
+                            )
+                    );
+                    ticker.putHistoricalHigh(
+                            convertLocalDate(date),
+                            Float.parseFloat(
+                                    columns.get(2).text().replace(",","")
+                            )
+                    );
+                    ticker.putHistoricalLow(
+                            convertLocalDate(date),
+                            Float.parseFloat(
+                                    columns.get(3).text().replace(",","")
+                            )
+                    );
+                    ticker.putHistoricalClose(
+                            convertLocalDate(date),
+                            Float.parseFloat(
+                                    columns.get(4).text().replace(",","")
+                            )
+                    );
+                    ticker.putHistoricalAdjClose(
+                            convertLocalDate(date),
+                            Float.parseFloat(
+                                    columns.get(5).text().replace(",","")
+                            )
+                    );
+                    ticker.putHistoricalVolume(
+                            convertLocalDate(date),
+                            Float.parseFloat(
+                                    columns.get(6).text().replace(",","")
+                            )
+                    );
                 }
             }
         }
-
-        //[data-testid="history-table"]
-
         //Document auf standard zurücksetzen:
         getDocument("https://finance.yahoo.com/quote/" + ticker.getTicker());
     }

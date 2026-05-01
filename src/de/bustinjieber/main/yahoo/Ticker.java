@@ -2,6 +2,9 @@ package de.bustinjieber.main.yahoo;
 
 import de.bustinjieber.main.scraper.Scraper;
 
+import java.time.LocalDate;
+import java.util.HashMap;
+
 /**
  * Helper Data-Class for storing data relating to a certain Ticker
  */
@@ -27,6 +30,17 @@ public class Ticker {
      */
     private Float marketCap;
     private Float beta5YM;
+
+    /**
+     * historical-content - needs to be implemented correctly. (key: date, value: xyz)
+     * open, high, low, close, adjClode, volume
+     */
+    private HashMap<LocalDate, Float> historicalOpen = new HashMap<>();
+    private HashMap<LocalDate, Float> historicalHigh = new HashMap<>();
+    private HashMap<LocalDate, Float> historicalLow = new HashMap<>();
+    private HashMap<LocalDate, Float> historicalClose = new HashMap<>();
+    private HashMap<LocalDate, Float> historicalAdjClose = new HashMap<>();
+    private HashMap<LocalDate, Float> historicalVolume = new HashMap<>();
 
     public Ticker(String t){
         this.ticker = t;
@@ -174,5 +188,53 @@ public class Ticker {
 
     public void setBeta5YM(Float beta5YM) {
         this.beta5YM = beta5YM;
+    }
+
+    public HashMap<LocalDate, Float> getHistoricalOpen() {
+        return historicalOpen;
+    }
+
+    public void putHistoricalOpen(LocalDate d, Float f){
+        this.historicalOpen.put(d,f);
+    }
+
+    public HashMap<LocalDate, Float> getHistoricalHigh() {
+        return historicalHigh;
+    }
+
+    public void putHistoricalHigh(LocalDate d, Float f){
+        this.historicalHigh.put(d,f);
+    }
+
+    public HashMap<LocalDate, Float> getHistoricalLow() {
+        return historicalLow;
+    }
+
+    public void putHistoricalLow(LocalDate d, Float f){
+        this.historicalLow.put(d,f);
+    }
+
+    public HashMap<LocalDate, Float> getHistoricalClose() {
+        return historicalClose;
+    }
+
+    public void putHistoricalClose(LocalDate d, Float f){
+        this.historicalClose.put(d,f);
+    }
+
+    public HashMap<LocalDate, Float> getHistoricalAdjClose() {
+        return historicalAdjClose;
+    }
+
+    public void putHistoricalAdjClose(LocalDate d, Float f){
+        this.historicalAdjClose.put(d,f);
+    }
+
+    public HashMap<LocalDate, Float> getHistoricalVolume() {
+        return historicalVolume;
+    }
+
+    public void putHistoricalVolume(LocalDate d, Float f){
+        this.historicalVolume.put(d,f);
     }
 }
