@@ -209,6 +209,10 @@ public class Scraper {
         if(mC_s.contains("B")){
             mC_f = Float.parseFloat(mC_s.replace("B", "")) * 1000000000000f;
         }
+        else if(mC_s.contains("T"))
+        {
+            mC_f = Float.parseFloat(mC_s.replace("T", "")) * 1000000000000f;
+        }
 
         ticker.setMarketCap(
                 mC_f
