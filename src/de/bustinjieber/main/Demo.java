@@ -20,10 +20,15 @@ public class Demo {
         // Showcase of the current data
         System.out.println(t1);
 
+        // Showcase of income-statements (TTM & last four years)
+        for(Date d : t1.getIncomeStatements().keySet()){
+            System.out.println(t1.getIncomeStatements().get(d).toString());
+        }
+
         // Showcase of the historical data
 
         List<Date> xData = new ArrayList<>();
-        List<Float> yData = new ArrayList<>();
+        List<Double> yData = new ArrayList<>();
 
         for(Date d : t1.getHistoricalOpen().keySet()){
             xData.add(d);

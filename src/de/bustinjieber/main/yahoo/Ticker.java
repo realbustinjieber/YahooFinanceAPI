@@ -12,36 +12,40 @@ public class Ticker {
 
     private String ticker;
     private String quoteTitle;
-    private Float price;
-    private Float change;
-    private Float changePercentage;
+    private Double price;
+    private Double change;
+    private Double changePercentage;
     private Scraper scraper;
     /**
      * statistics-content 1/2
      */
-    private Float volume;
-    private Float avgVolume;
-    private Float[] daysRange;
-    private Float open;
-    private Float prevClose;
-    private Float[] fiftyTwoWeekRange;
+    private Double volume;
+    private Double avgVolume;
+    private Double[] daysRange;
+    private Double open;
+    private Double prevClose;
+    private Double[] fiftyTwoWeekRange;
     /**
      * statistics-content 2/2 - needs to be checked if null, as they don't always exit (example: S&P 500)
      */
-    private Float marketCap;
-    private Float beta5YM;
+    private Double marketCap;
+    private Double beta5YM;
 
     /**
      * historical-content - needs to be implemented correctly. (key: date, value: xyz)
      * open, high, low, close, adjClode, volume
      */
-    private TreeMap<Date, Float> historicalOpen = new TreeMap<Date, Float>();
-    private TreeMap<Date, Float> historicalHigh = new TreeMap<Date, Float>();
-    private TreeMap<Date, Float> historicalLow = new TreeMap<Date, Float>();
-    private TreeMap<Date, Float> historicalClose = new TreeMap<Date, Float>();
-    private TreeMap<Date, Float> historicalAdjClose = new TreeMap<Date, Float>();
-    private TreeMap<Date, Float> historicalVolume = new TreeMap<Date, Float>();
+    private TreeMap<Date, Double> historicalOpen = new TreeMap<Date, Double>();
+    private TreeMap<Date, Double> historicalHigh = new TreeMap<Date, Double>();
+    private TreeMap<Date, Double> historicalLow = new TreeMap<Date, Double>();
+    private TreeMap<Date, Double> historicalClose = new TreeMap<Date, Double>();
+    private TreeMap<Date, Double> historicalAdjClose = new TreeMap<Date, Double>();
+    private TreeMap<Date, Double> historicalVolume = new TreeMap<Date, Double>();
     private boolean historicalsExist = false;
+    /**
+     *  IncomeStatement
+     */
+    private TreeMap<Date, IncomeStatement> incomeStatements = new TreeMap<>();
 
     /**
      * Initializes a new Ticker (with the according Symbol) and gives it its own scraper.
@@ -55,6 +59,7 @@ public class Ticker {
     /**
      * @return Basic information about the ticker.
      */
+    @Override
     public String toString(){
        return "Ticker: " + getTicker() + "\n"
                + "Title: " + getQuoteTitle() + "\n"
@@ -83,93 +88,93 @@ public class Ticker {
         this.quoteTitle = qT;
     }
 
-    public Float getPrice() {
+    public Double getPrice() {
         scraper.scrapePrice();
         return price;
     }
 
-    public void setPrice(Float price) {
+    public void setPrice(Double price) {
         this.price = price;
     }
 
-    public Float getChange() {
+    public Double getChange() {
         scraper.scrapeChange();
         return change;
     }
 
-    public void setChange(Float change) {
+    public void setChange(Double change) {
         this.change = change;
     }
 
-    public Float getChangePercentage() {
+    public Double getChangePercentage() {
         scraper.scrapeChangePct();
         return changePercentage;
     }
 
-    public void setChangePercentage(Float changePercentage) {
+    public void setChangePercentage(Double changePercentage) {
         this.changePercentage = changePercentage;
     }
 
-    public Float getVolume() {
+    public Double getVolume() {
         scraper.scrapeVolume();
         return volume;
     }
 
-    public void setVolume(Float volume) {
+    public void setVolume(Double volume) {
         this.volume = volume;
     }
 
-    public Float getAvgVolume() {
+    public Double getAvgVolume() {
         scraper.scrapeAvgVolume();
         return avgVolume;
     }
 
-    public void setAvgVolume(Float avgVolume) {
+    public void setAvgVolume(Double avgVolume) {
         this.avgVolume = avgVolume;
     }
 
-    public Float[] getDaysRange() {
+    public Double[] getDaysRange() {
         scraper.scrapeDayRange();
         return daysRange;
     }
 
-    public void setDaysRange(Float[] daysRange) {
+    public void setDaysRange(Double[] daysRange) {
         this.daysRange = daysRange;
     }
 
-    public Float getOpen() {
+    public Double getOpen() {
         scraper.scrapeOpen();
         return open;
     }
 
-    public void setOpen(Float open) {
+    public void setOpen(Double open) {
         this.open = open;
     }
 
-    public Float getPrevClose() {
+    public Double getPrevClose() {
         scraper.scrapePrevClose();
         return prevClose;
     }
 
-    public void setPrevClose(Float prevClose) {
+    public void setPrevClose(Double prevClose) {
         this.prevClose = prevClose;
     }
 
-    public Float[] getFiftyTwoWeekRange() {
+    public Double[] getFiftyTwoWeekRange() {
         scraper.scrapeFiftyTwoWeekRange();
         return fiftyTwoWeekRange;
     }
 
-    public void setFiftyTwoWeekRange(Float[] fiftyTwoWeekRange) {
+    public void setFiftyTwoWeekRange(Double[] fiftyTwoWeekRange) {
         this.fiftyTwoWeekRange = fiftyTwoWeekRange;
     }
 
-    public Float getMarketCap() {
+    public Double getMarketCap() {
         scraper.scrapeMarketCap();
         return marketCap;
     }
 
-    public void setMarketCap(Float marketCap) {
+    public void setMarketCap(Double marketCap) {
         this.marketCap = marketCap;
     }
 
@@ -177,12 +182,12 @@ public class Ticker {
         return scraper;
     }
 
-    public Float getBeta5YM() {
+    public Double getBeta5YM() {
         scraper.scrapeBeta5YM();
         return beta5YM;
     }
 
-    public void setBeta5YM(Float beta5YM) {
+    public void setBeta5YM(Double beta5YM) {
         this.beta5YM = beta5YM;
     }
 
@@ -206,73 +211,87 @@ public class Ticker {
         getScraper().scrapeHistoricals(f, period1, period2);
     }
 
-    public TreeMap<Date, Float> getHistoricalOpen() {
+    public TreeMap<Date, Double> getHistoricalOpen() {
         if(!doHistoricalsExist()){
-            throw new RuntimeException("You have to run 'getHistoricals' first!");
+            throw new RuntimeException("You have to run 'getHistoricals()' first!");
         }
         return historicalOpen;
     }
 
-    public void putHistoricalOpen(Date d, Float f){
+    public void putHistoricalOpen(Date d, Double f){
         this.historicalOpen.put(d,f);
     }
 
-    public TreeMap<Date, Float> getHistoricalHigh() {
+    public TreeMap<Date, Double> getHistoricalHigh() {
         if(!doHistoricalsExist()){
-            throw new RuntimeException("You have to run 'getHistoricals' first!");
+            throw new RuntimeException("You have to run 'getHistoricals()' first!");
         }
         return historicalHigh;
     }
 
-    public void putHistoricalHigh(Date d, Float f){
+    public void putHistoricalHigh(Date d, Double f){
         this.historicalHigh.put(d,f);
     }
 
-    public TreeMap<Date, Float> getHistoricalLow() {
+    public TreeMap<Date, Double> getHistoricalLow() {
         if(!doHistoricalsExist()){
-            throw new RuntimeException("You have to run 'getHistoricals' first!");
+            throw new RuntimeException("You have to run 'getHistoricals()' first!");
         }
         return historicalLow;
     }
 
-    public void putHistoricalLow(Date d, Float f){
+    public void putHistoricalLow(Date d, Double f){
         this.historicalLow.put(d,f);
     }
 
-    public TreeMap<Date, Float> getHistoricalClose() {
+    public TreeMap<Date, Double> getHistoricalClose() {
         if(!doHistoricalsExist()){
-            throw new RuntimeException("You have to run 'getHistoricals' first!");
+            throw new RuntimeException("You have to run 'getHistoricals()' first!");
         }
         return historicalClose;
     }
 
-    public void putHistoricalClose(Date d, Float f){
+    public void putHistoricalClose(Date d, Double f){
         this.historicalClose.put(d,f);
     }
 
-    public TreeMap<Date, Float> getHistoricalAdjClose() {
+    public TreeMap<Date, Double> getHistoricalAdjClose() {
         if(!doHistoricalsExist()){
-            throw new RuntimeException("You have to run 'getHistoricals' first!");
+            throw new RuntimeException("You have to run 'getHistoricals()' first!");
         }
         return historicalAdjClose;
     }
 
-    public void putHistoricalAdjClose(Date d, Float f){
+    public void putHistoricalAdjClose(Date d, Double f){
         this.historicalAdjClose.put(d,f);
     }
 
-    public TreeMap<Date, Float> getHistoricalVolume() {
+    public TreeMap<Date, Double> getHistoricalVolume() {
         if(!doHistoricalsExist()){
-            throw new RuntimeException("You have to run 'getHistoricals' first!");
+            throw new RuntimeException("You have to run 'getHistoricals()' first!");
         }
         return historicalVolume;
     }
 
-    public void putHistoricalVolume(Date d, Float f){
+    public void putHistoricalVolume(Date d, Double f){
         this.historicalVolume.put(d,f);
     }
 
     public boolean doHistoricalsExist() {
         return historicalsExist;
+    }
+
+    /**
+     * Get all income-statements. Scrapes for them if not already happened.
+     * (To get newer Statements, you need to run 'scrapeIncomeStatements()' first.
+     * @return a TreeMap of all income-statements sorted by date (TTM is always assigned the current time and date in chicago).
+     */
+    public TreeMap<Date, IncomeStatement> getIncomeStatements() {
+        if(incomeStatements.isEmpty()) getScraper().scrapeIncomeStatements();
+        return incomeStatements;
+    }
+
+    public void setIncomeStatements(TreeMap<Date, IncomeStatement> incomeStatements) {
+        this.incomeStatements = incomeStatements;
     }
 }

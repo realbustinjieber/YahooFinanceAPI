@@ -3,6 +3,7 @@ package de.bustinjieber.main.scraper;
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.Cookie;
 import de.bustinjieber.main.yahoo.Frequency;
+import de.bustinjieber.main.yahoo.IncomeStatement;
 import de.bustinjieber.main.yahoo.Ticker;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -10,10 +11,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.BiConsumer;
 
 public class Scraper {
 
@@ -21,6 +20,7 @@ public class Scraper {
     private Ticker ticker;
     private Document doc;
     private DebugPrinter debugPrinter;
+    private final Parser parser = new Parser();
 
     private void getDocument(String url){
         try {
@@ -81,7 +81,7 @@ public class Scraper {
 
     public Scraper(Ticker t){
         this.ticker = t;
-        this.debugPrinter = new DebugPrinter(false);
+        this.debugPrinter = new DebugPrinter(true);
         getDocument("https://finance.yahoo.com/quote/" + ticker.getTicker());
     }
 
@@ -94,105 +94,50 @@ public class Scraper {
     }
 
     public void scrapePrice(){
-        Element priceElem = doc.selectFirst("[data-testid=qsp-price]");
-        ticker.setPrice(
-                Float.valueOf(
-                        priceElem.text()
-                                .replace(",", "")
-                )
-        );
+        Element element = doc.selectFirst("[data-testid=qsp-price]");
+        ticker.setPrice(parser.parseAmount(element.text()));
     }
 
     public void scrapeChange(){
-        Element changeElem = doc.selectFirst("[data-testid=qsp-price-change]");
-        ticker.setChange(
-                Float.valueOf(
-                        changeElem.text()
-                )
-        );
+        Element element = doc.selectFirst("[data-testid=qsp-price-change]");
+        ticker.setChange(parser.parseAmount(element.text()));
     }
 
     public void scrapePrevClose(){
-        Element prevCloseElem = doc.selectFirst("[data-field=regularMarketPreviousClose]");
-        ticker.setPrevClose(
-                Float.valueOf(
-                        prevCloseElem.text()
-                                .replace(",","")
-                )
-        );
+        Element element = doc.selectFirst("[data-field=regularMarketPreviousClose]");
+        ticker.setPrevClose(parser.parseAmount(element.text()));
     }
 
     public void scrapeOpen(){
-        Element openElem = doc.selectFirst("[data-field=regularMarketOpen]");
-        ticker.setOpen(
-                Float.valueOf(
-                        openElem.text()
-                                .replace(",","")
-                )
-        );
+        Element element = doc.selectFirst("[data-field=regularMarketOpen]");
+        ticker.setOpen(parser.parseAmount(element.text()));
     }
 
     public void scrapeChangePct(){
-        Element changePctElem = doc.selectFirst("[data-testid=qsp-price-change-percent]");
+        Element element = doc.selectFirst("[data-testid=qsp-price-change-percent]");
         ticker.setChangePercentage(
-                Float.valueOf(
-                        changePctElem.text().
-                                replace("%","").
-                                replace("(","").
-                                replace(")","")
-                )
+                parser.parsePercentage(element.text())
         );
     }
 
     public void scrapeDayRange(){
-        Element daysRangeElem = doc.selectFirst("[data-field=regularMarketDayRange]");
-        ticker.setDaysRange(new Float[]{
-                Float.parseFloat(
-                        daysRangeElem.text()
-                                .split("-")[0]
-                                .replace(",", "")),
-                Float.parseFloat(
-                        daysRangeElem.text()
-                                .split("-")[1]
-                                .replace(",", ""))
-                }
-        );
+        Element element = doc.selectFirst("[data-field=regularMarketDayRange]");
+        ticker.setDaysRange(parser.parseAmountArray(element.text()));
     }
 
     public void scrapeVolume(){
-        Element volumeElem = doc.selectFirst("[data-field=regularMarketVolume]");
-        ticker.setVolume(
-                Float.parseFloat(
-                        volumeElem.text()
-                                .replace(",","")
-                )
-        );
+        Element element = doc.selectFirst("[data-field=regularMarketVolume]");
+        ticker.setVolume(parser.parseAmount(element.text()));
     }
 
     public void scrapeAvgVolume(){
-        Element avgVolumeElem = doc.selectFirst("[data-field=averageVolume]");
-        ticker.setAvgVolume(
-                Float.parseFloat(
-                        avgVolumeElem.text()
-                                .replace(",","")
-                )
-        );
+        Element element = doc.selectFirst("[data-field=averageVolume]");
+        ticker.setAvgVolume(parser.parseAmount(element.text()));
     }
 
     public void scrapeFiftyTwoWeekRange(){
-        Element fiftyTwoWeekRangeElem = doc.selectFirst("[data-field=fiftyTwoWeekRange]");
-        ticker.setFiftyTwoWeekRange(new Float[]{
-                        Float.parseFloat(
-                                fiftyTwoWeekRangeElem.text()
-                                        .split("-")[0]
-                                        .replace(",", "")),
-                        Float.parseFloat(
-                                fiftyTwoWeekRangeElem.text()
-                                        .split("-")[1]
-                                        .replace(",", ""))
-
-                }
-        );
+        Element element = doc.selectFirst("[data-field=fiftyTwoWeekRange]");
+        ticker.setFiftyTwoWeekRange(parser.parseAmountArray(element.text()));
     }
 
     /**
@@ -204,18 +149,18 @@ public class Scraper {
         if(marketCapElem == null) return;
         if(marketCapElem.text().contains("--"))return;
         String mC_s = marketCapElem.text().replace(",","");
-        float mC_f = 0f;
+        Double mC_f = 0d;
 
         if(mC_s.contains("B")){
-            mC_f = Float.parseFloat(mC_s.replace("B", "")) * 1000000000f;
+            mC_f = Double.parseDouble(mC_s.replace("B", "")) * 1000000000f;
         }
         else if(mC_s.contains("T"))
         {
-            mC_f = Float.parseFloat(mC_s.replace("T", "")) * 1000000000000f;
+            mC_f = Double.parseDouble(mC_s.replace("T", "")) * 1000000000000f;
         }
         else if(mC_s.contains("M"))
         {
-            mC_f = Float.parseFloat(mC_s.replace("M", "")) * 1000000f;
+            mC_f = Double.parseDouble(mC_s.replace("M", "")) * 1000000f;
         }
 
         ticker.setMarketCap(
@@ -229,24 +174,52 @@ public class Scraper {
         Element valueSpan = labelSpan.nextElementSibling();
         if(valueSpan == null || valueSpan.text().contains("--"))return;
 
-        ticker.setBeta5YM(
-                Float.parseFloat(
-                        valueSpan.text()
-                                .replace(",","")
-                                .trim()
-                )
-        );
+        ticker.setBeta5YM(parser.parseAmount(valueSpan.text()));
     }
 
     /**
-     * Converts the DateString given by Hist-Data into a Date-Obj. (using American.Central Time)
-     * @param s String (ex: "Dec 10, 2002") that needs to be converted into a Date.
-     * @return LocalDate in correct format (ex: "2002-12-10").
+     * Actual Scraping method, as I didnt want to have the scraper duplicated.
+     * @param url url that points to the historicals.
      */
-    private Date convertLocalDate(String s){
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM d, uuuu", Locale.ENGLISH);
-        LocalDate localDate = LocalDate.parse(s, formatter);
-        return Date.from(localDate.atStartOfDay(ZoneId.of("America/Chicago")).toInstant());
+    private void scrapeHistoricalBackend(String url){
+        getDocumentWithCookies(url);
+
+        Element tableContainer = doc.selectFirst("[data-testid=history-table]");
+        if (tableContainer != null) {
+            Elements rows = tableContainer.select("table tbody tr");
+            for (Element row : rows) {
+                Elements columns = row.select("td");
+                if (columns.size() >= 7) {
+                    Date date = parser.convertStrToDate(columns.get(0).text());
+                    ticker.putHistoricalOpen(
+                            date,
+                            parser.parseAmount(columns.get(1).text())
+                    );
+                    ticker.putHistoricalHigh(
+                            date,
+                            parser.parseAmount(columns.get(2).text())
+                    );
+                    ticker.putHistoricalLow(
+                            date,
+                            parser.parseAmount(columns.get(3).text())
+                    );
+                    ticker.putHistoricalClose(
+                            date,
+                            parser.parseAmount(columns.get(4).text())
+                    );
+                    ticker.putHistoricalAdjClose(
+                            date,
+                            parser.parseAmount(columns.get(5).text())
+                    );
+                    ticker.putHistoricalVolume(
+                            date,
+                            parser.parseAmount(columns.get(6).text())
+                    );
+                }
+            }
+        }
+        //Document auf standard zurücksetzen:
+        getDocument("https://finance.yahoo.com/quote/" + ticker.getTicker());
     }
 
     /**
@@ -256,56 +229,7 @@ public class Scraper {
      */
     public void scrapeHistoricals(Frequency f){
         String url = "https://finance.yahoo.com/quote/" + ticker.getTicker() + "/history/?period1=0&period2=9999999999&frequency=" + f.getFrequency();
-        getDocumentWithCookies(url);
-
-        Element tableContainer = doc.select("[data-testid=history-table]").first();
-        if (tableContainer != null) {
-            Elements rows = tableContainer.select("table tbody tr");
-            for (Element row : rows) {
-                Elements columns = row.select("td");
-                if (columns.size() >= 7) {
-                    String date = columns.get(0).text();
-                    ticker.putHistoricalOpen(
-                            convertLocalDate(date),
-                            Float.parseFloat(
-                                    columns.get(1).text().replace(",","")
-                            )
-                    );
-                    ticker.putHistoricalHigh(
-                            convertLocalDate(date),
-                            Float.parseFloat(
-                                    columns.get(2).text().replace(",","")
-                            )
-                    );
-                    ticker.putHistoricalLow(
-                            convertLocalDate(date),
-                            Float.parseFloat(
-                                    columns.get(3).text().replace(",","")
-                            )
-                    );
-                    ticker.putHistoricalClose(
-                            convertLocalDate(date),
-                            Float.parseFloat(
-                                    columns.get(4).text().replace(",","")
-                            )
-                    );
-                    ticker.putHistoricalAdjClose(
-                            convertLocalDate(date),
-                            Float.parseFloat(
-                                    columns.get(5).text().replace(",","")
-                            )
-                    );
-                    ticker.putHistoricalVolume(
-                            convertLocalDate(date),
-                            Float.parseFloat(
-                                    columns.get(6).text().replace(",","")
-                            )
-                    );
-                }
-            }
-        }
-        //Document auf standard zurücksetzen:
-        getDocument("https://finance.yahoo.com/quote/" + ticker.getTicker());
+        scrapeHistoricalBackend(url);
     }
 
     /**
@@ -317,56 +241,165 @@ public class Scraper {
      */
     public void scrapeHistoricals(Frequency f, int period1, int period2){
         String url = "https://finance.yahoo.com/quote/" + ticker.getTicker() + "/history/?period1=" + period1 + "&period2=" + period2 + "&frequency=" + f.getFrequency();
+        scrapeHistoricalBackend(url);
+    }
+
+    /**
+     * updates the various setters included in the income-statement.
+     * @param dI TreeMap of our Date & IncomeStatement
+     * @param d Date
+     * @param cC String-Array
+     * @param setter Setter that needs to be called
+     */
+    private void updateStatements(TreeMap<Date, IncomeStatement> dI,List<Date> d, String[] cC, BiConsumer<IncomeStatement, Double> setter) {
+        for (int i = 0; i < cC.length; i++) {
+            setter.accept(
+                    dI.get(d.get(i)),
+                    parser.parseAmount(cC[i])
+            );
+        }
+    }
+
+    /* https://finance.yahoo.com/quote/RYAN/financials/
+    Table is called: data-testid="qsp-financials"
+    Reihenfolge der Rows: TTM 9/30/2025 9/30/2024 9/30/2023 9/30/2022
+    ToDo: Currently only annual statements, as you would need to press the quarterly button to switch!
+     */
+    public void scrapeIncomeStatements(){
+        String url = "https://finance.yahoo.com/quote/" + ticker.getTicker() + "/financials/";
         getDocumentWithCookies(url);
 
-        Element tableContainer = doc.select("[data-testid=history-table]").first();
-        if (tableContainer != null) {
-            Elements rows = tableContainer.select("table tbody tr");
-            for (Element row : rows) {
-                Elements columns = row.select("td");
-                if (columns.size() >= 7) {
-                    String date = columns.get(0).text();
-                    ticker.putHistoricalOpen(
-                            convertLocalDate(date),
-                            Float.parseFloat(
-                                    columns.get(1).text().replace(",","")
-                            )
-                    );
-                    ticker.putHistoricalHigh(
-                            convertLocalDate(date),
-                            Float.parseFloat(
-                                    columns.get(2).text().replace(",","")
-                            )
-                    );
-                    ticker.putHistoricalLow(
-                            convertLocalDate(date),
-                            Float.parseFloat(
-                                    columns.get(3).text().replace(",","")
-                            )
-                    );
-                    ticker.putHistoricalClose(
-                            convertLocalDate(date),
-                            Float.parseFloat(
-                                    columns.get(4).text().replace(",","")
-                            )
-                    );
-                    ticker.putHistoricalAdjClose(
-                            convertLocalDate(date),
-                            Float.parseFloat(
-                                    columns.get(5).text().replace(",","")
-                            )
-                    );
-                    ticker.putHistoricalVolume(
-                            convertLocalDate(date),
-                            Float.parseFloat(
-                                    columns.get(6).text().replace(",","")
-                            )
-                    );
-                }
+        Elements dateElements = doc.select(".tableHeader .row > .column");
+        TreeMap<Date, IncomeStatement> statements = new TreeMap<>();
+        List<Date> dates = new ArrayList<>();
+        for(Element e : dateElements){
+            if(e.text().contains("Breakdown"))continue;
+            Date date = parser.toUtilDate(e.text().trim());
+            IncomeStatement statement = new IncomeStatement(date);
+            statement.setTicker(ticker);
+            statements.put(date,statement);
+            dates.add(date);
+        }
+
+        Element tableElement = doc.selectFirst("[data-testid=qsp-financials]");
+        if(tableElement==null)return;
+
+        Elements rowsElement = doc.select("div.row.lv-0");
+
+        for(Element row : rowsElement){
+            Element titleRowElement = row.selectFirst(".rowTitle");
+            String elementTitle = titleRowElement.attr("title");
+
+            Elements columnElement = row.select("div.column");
+            String columnContent = columnElement.text()
+                    .replace(
+                            titleRowElement.attr("title"),
+                            ""
+                    )
+                    .substring(1);
+            String[] columnContents = columnContent.split(" ");
+
+            switch (elementTitle) {
+                case "Total Revenue":
+                    updateStatements(statements,dates,columnContents,IncomeStatement::setTotalRevenue);
+                    break;
+                case "Cost of Revenue":
+                    updateStatements(statements,dates,columnContents,IncomeStatement::setCostOfRevenue);
+                    break;
+                case "Gross Profit":
+                    updateStatements(statements,dates,columnContents,IncomeStatement::setGrossProfit);
+                    break;
+                case "Operating Expense":
+                    updateStatements(statements,dates,columnContents,IncomeStatement::setOperatingExpenses);
+                    break;
+                case "Operating Income":
+                    updateStatements(statements,dates,columnContents,IncomeStatement::setOperatingIncome);
+                    break;
+                case "Total Expenses":
+                    updateStatements(statements,dates,columnContents,IncomeStatement::setTotalExpenses);
+                    break;
+                case "Pretax Income":
+                    updateStatements(statements,dates,columnContents,IncomeStatement::setPreTaxIncome);
+                    break;
+                case "Tax Provision":
+                    updateStatements(statements,dates,columnContents,IncomeStatement::setTaxProvision);
+                    break;
+                case "Basic EPS":
+                    updateStatements(statements,dates,columnContents,IncomeStatement::setBasicEarningsPerShare);
+                    break;
+                case "Diluted EPS":
+                    updateStatements(statements,dates,columnContents,IncomeStatement::setDilutedEarningsPerShare);
+                    break;
+                case "Normalized Income":
+                    updateStatements(statements,dates,columnContents,IncomeStatement::setNormalizedIncome);
+                    break;
+                case "EBIT":
+                    updateStatements(statements,dates,columnContents,IncomeStatement::setEBIT);
+                    break;
+                case "Reconciled Depreciation":
+                    updateStatements(statements,dates,columnContents,IncomeStatement::setReconciledDepreciation);
+                    break;
+                case "EBITDA":
+                    updateStatements(statements,dates,columnContents,IncomeStatement::setEBITDA);
+                    break;
+                case "Net Non Operating Interest Income Expense":
+                    updateStatements(statements, dates, columnContents, IncomeStatement::setNetNonOperatingInterestLoss);
+                    break;
+                case "Other Income Expense":
+                    updateStatements(statements, dates, columnContents, IncomeStatement::setOtherIncomeExpenses);
+                    break;
+                case "Other Non Operating Income Expenses":
+                    updateStatements(statements, dates, columnContents, IncomeStatement::setOtherIncome);
+                    break;
+                case "Net Income From Continuing Operation Net Minority Interest":
+                    updateStatements(statements, dates, columnContents, IncomeStatement::setNetIncomeFromContinuingOperations);
+                    break;
+                case "Net Income Common Stockholders":
+                    updateStatements(statements, dates, columnContents, IncomeStatement::setNetIncomeCommonStockholders);
+                    break;
+                case "Basic Average Shares":
+                    updateStatements(statements, dates, columnContents, IncomeStatement::setBasicAverageShares);
+                    break;
+                case "Diluted Average Shares":
+                    updateStatements(statements, dates, columnContents, IncomeStatement::setDilutedAverageShares);
+                    break;
+                case "Total Depreciation And Amortization":
+                    updateStatements(statements, dates, columnContents, IncomeStatement::setTotalDepreciation);
+                    break;
+                case "Reconciled Cost of Revenue":
+                    updateStatements(statements, dates, columnContents, IncomeStatement::setReconciledCostOfRevenue);
+                    break;
+                case "Interest Expense":
+                    updateStatements(statements, dates, columnContents, IncomeStatement::setTotalInterestExpense);
+                    break;
+                case "Net Interest Income":
+                    updateStatements(statements, dates, columnContents, IncomeStatement::setNetInterestIncome);
+                    break;
+                case "Total Unusual Items":
+                    updateStatements(statements, dates, columnContents, IncomeStatement::setTotalUnusualItems);
+                    break;
+                case "Normalized EBITDA":
+                    updateStatements(statements, dates, columnContents, IncomeStatement::setNormalizedEBITDA);
+                    break;
+                default:
+                    break;
             }
         }
+
+        ticker.setIncomeStatements(statements);
+
         //Document auf standard zurücksetzen:
         getDocument("https://finance.yahoo.com/quote/" + ticker.getTicker());
+    }
+
+    // https://finance.yahoo.com/quote/RYAN/balance-sheet/
+    public void scrapeBalanceSheet(){
+
+    }
+
+    // https://finance.yahoo.com/quote/RYAN/cash-flow/
+    public void scrapeCashflow(){
+
     }
 
     public String getId() {
