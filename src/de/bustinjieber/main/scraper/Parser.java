@@ -1,9 +1,8 @@
 package de.bustinjieber.main.scraper;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.Locale;
 
@@ -65,18 +64,20 @@ public class Parser {
     }
 
     /**
-     * Vibecoded Method for converting string to Util.Date - in the format (M/D/YYYY).
-     * @param s Date in String-form.
-     * @return a Util.Date Obj.
+     * (VibeCoded): Returns the Unix timestamp (seconds since 1970-01-01T00:00:00Z) for the end of the next year
+     * at 23:59:59 in UTC.
+     *
+     * Example: if the current year is 2026, this returns the epoch seconds for 2027-12-31T23:59:59Z.
+     *
+     * @return epoch seconds for next year's 31 December 23:59:59 UTC
      */
-    public Date toUtilDate(String s) {
-        ZoneId zone = ZoneId.of("America/Chicago");
-        if (s.contains("TTM")) {
-            LocalDate ld = LocalDate.now(zone);
-            return Date.from(ld.atStartOfDay(zone).toInstant());
-        }
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("M/d/yyyy");
-        LocalDate ld = LocalDate.parse(s, fmt);
-        return Date.from(ld.atStartOfDay(zone).toInstant());
+    public long endOfNextYearUnix() {
+        int nextYear = ZonedDateTime.now(ZoneOffset.UTC).getYear() + 1;
+        ZonedDateTime endOfNextYear = LocalDateTime.of(nextYear, 12, 31, 23, 59, 59).atZone(ZoneOffset.UTC);
+        return endOfNextYear.toEpochSecond();
+    }
+
+    public LocalDate toLocalDate(String s){
+        return LocalDate.parse(s,DateTimeFormatter.ISO_LOCAL_DATE);
     }
 }

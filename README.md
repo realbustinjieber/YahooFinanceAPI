@@ -20,8 +20,7 @@ This example demonstrates how to initialize a ticker, fetch historical data, and
 
 ```java
 import de.bustinjieber.main.yahoo.Ticker;
-import de.bustinjieber.main.yahoo.Frequency;
-import java.util.Date;
+import de.bustinjieber.main.yahoo.utils.Frequency;
 
 public class Main {
     public static void main(String[] args) {

@@ -1,7 +1,13 @@
 package de.bustinjieber.main.yahoo;
 
 import de.bustinjieber.main.scraper.Scraper;
+import de.bustinjieber.main.yahoo.statements.BalanceSheet;
+import de.bustinjieber.main.yahoo.statements.CashFlow;
+import de.bustinjieber.main.yahoo.statements.IncomeStatement;
+import de.bustinjieber.main.yahoo.utils.Frequency;
+import de.bustinjieber.main.yahoo.utils.Period;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.TreeMap;
 
@@ -35,17 +41,25 @@ public class Ticker {
      * historical-content - needs to be implemented correctly. (key: date, value: xyz)
      * open, high, low, close, adjClode, volume
      */
-    private TreeMap<Date, Double> historicalOpen = new TreeMap<Date, Double>();
-    private TreeMap<Date, Double> historicalHigh = new TreeMap<Date, Double>();
-    private TreeMap<Date, Double> historicalLow = new TreeMap<Date, Double>();
-    private TreeMap<Date, Double> historicalClose = new TreeMap<Date, Double>();
-    private TreeMap<Date, Double> historicalAdjClose = new TreeMap<Date, Double>();
-    private TreeMap<Date, Double> historicalVolume = new TreeMap<Date, Double>();
+    private TreeMap<Date, Double> historicalOpen = new TreeMap<>();
+    private TreeMap<Date, Double> historicalHigh = new TreeMap<>();
+    private TreeMap<Date, Double> historicalLow = new TreeMap<>();
+    private TreeMap<Date, Double> historicalClose = new TreeMap<>();
+    private TreeMap<Date, Double> historicalAdjClose = new TreeMap<>();
+    private TreeMap<Date, Double> historicalVolume = new TreeMap<>();
     private boolean historicalsExist = false;
     /**
      *  IncomeStatement
      */
-    private TreeMap<Date, IncomeStatement> incomeStatements = new TreeMap<>();
+    private TreeMap<LocalDate, IncomeStatement> incomeStatements = new TreeMap<LocalDate, IncomeStatement>();
+    /**
+     *  BalanceSheet
+     */
+    private TreeMap<LocalDate, BalanceSheet> balanceSheets = new TreeMap<>();
+    /**
+     *  Cash Flow
+     */
+    private TreeMap<LocalDate, CashFlow> cashFlows = new TreeMap<LocalDate, CashFlow>();
 
     /**
      * Initializes a new Ticker (with the according Symbol) and gives it its own scraper.
@@ -54,6 +68,16 @@ public class Ticker {
     public Ticker(String t){
         this.ticker = t;
         scraper = new Scraper(this);
+    }
+
+    /**
+     * Initializes a new Ticker (with the according Symbol) and gives it its own scraper.
+     * @param t Symbol needed to indetify the ticker (ex: AAPL)
+     * @param b weather or not the debugPrinter should be activated.
+     */
+    public Ticker(String t, boolean b){
+        this.ticker = t;
+        scraper = new Scraper(this,b);
     }
 
     /**
@@ -286,12 +310,42 @@ public class Ticker {
      * (To get newer Statements, you need to run 'scrapeIncomeStatements()' first.
      * @return a TreeMap of all income-statements sorted by date (TTM is always assigned the current time and date in chicago).
      */
-    public TreeMap<Date, IncomeStatement> getIncomeStatements() {
-        if(incomeStatements.isEmpty()) getScraper().scrapeIncomeStatements();
+    public TreeMap<LocalDate, IncomeStatement> getIncomeStatements(Period p) {
+        if(incomeStatements.isEmpty()) getScraper().scrapeIncomeStatements(p);
         return incomeStatements;
     }
 
-    public void setIncomeStatements(TreeMap<Date, IncomeStatement> incomeStatements) {
+    public void setIncomeStatements(TreeMap<LocalDate, IncomeStatement> incomeStatements) {
         this.incomeStatements = incomeStatements;
+    }
+
+    /**
+     * Get all CashFlows. Scrapes for them if not already happened.
+     * (To get newer cashflows, you need to run 'scrapeCashFlow()' first.
+     * @param p Period (enum), that dictates weather the annual or quarterly report should be used.
+     * @return a TreeMap of all cashflows sorted by date (normally 4x)
+     */
+    public TreeMap<LocalDate, CashFlow> getCashFlows(Period p) {
+        if(cashFlows.isEmpty()) getScraper().scrapeCashflow(p);
+        return cashFlows;
+    }
+
+    public void setCashFlows(TreeMap<LocalDate, CashFlow> cashFlows) {
+        this.cashFlows = cashFlows;
+    }
+
+    /**
+     * Get all balance-sheets. Scrapes for them if not already happened.
+     * (To get newer sheets, you need to run 'scrapeBalanceSheets()' first.
+     * @param p Period (enum), that dictates weather the annual or quarterly report should be used.
+     * @return a TreeMap of all income-statements sorted by date (normally 4x)
+     */
+    public TreeMap<LocalDate, BalanceSheet> getBalanceSheets(Period p) {
+        if(balanceSheets.isEmpty()) getScraper().scrapeBalanceSheet(p);
+        return balanceSheets;
+    }
+
+    public void setBalanceSheets(TreeMap<LocalDate, BalanceSheet> balanceSheets) {
+        this.balanceSheets = balanceSheets;
     }
 }

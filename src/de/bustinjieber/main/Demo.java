@@ -1,12 +1,17 @@
 package de.bustinjieber.main;
 
-import de.bustinjieber.main.yahoo.Frequency;
+import de.bustinjieber.main.yahoo.statements.BalanceSheet;
+import de.bustinjieber.main.yahoo.statements.CashFlow;
+import de.bustinjieber.main.yahoo.statements.IncomeStatement;
+import de.bustinjieber.main.yahoo.utils.Frequency;
 import de.bustinjieber.main.yahoo.Ticker;
+import de.bustinjieber.main.yahoo.utils.Period;
 import org.knowm.xchart.SwingWrapper;
 import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
 import org.knowm.xchart.style.Styler;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -20,9 +25,20 @@ public class Demo {
         // Showcase of the current data
         System.out.println(t1);
 
-        // Showcase of income-statements (TTM & last four years)
-        for(Date d : t1.getIncomeStatements().keySet()){
-            System.out.println(t1.getIncomeStatements().get(d).toString());
+        // Showcase of Cash Flow, Balance Sheets & Income Statements (Quarterly or Yearly)
+        System.out.println("--- Cash Flow ---");
+        for(CashFlow cF : t1.getCashFlows(Period.Quarterly).values()){
+            System.out.println(cF);
+        }
+
+        System.out.println("--- Balance Sheet ---");
+        for(BalanceSheet bS : t1.getBalanceSheets(Period.Quarterly).values()){
+            System.out.println(bS);
+        }
+
+        System.out.println("--- Income Statement ---");
+        for(IncomeStatement iS : t1.getIncomeStatements(Period.Quarterly).values()){
+            System.out.println(iS);
         }
 
         // Showcase of the historical data

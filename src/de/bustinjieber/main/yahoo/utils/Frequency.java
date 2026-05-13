@@ -1,4 +1,4 @@
-package de.bustinjieber.main.yahoo;
+package de.bustinjieber.main.yahoo.utils;
 
 /**
  * Converts human-readable intervals into less readable intervals, used for the historical-url (Daily, Weekly, Monthly).
