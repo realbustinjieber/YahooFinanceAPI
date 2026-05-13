@@ -1,57 +1,75 @@
-# YahooFinanceAPi v1.0
+# YahooFinanceAPI v1.2.
 
-A high-performance Java library designed to extract real-time and historical financial data from Yahoo Finance.
+A powerful, modernized Java library for retrieving financial data from Yahoo Finance. This version marks a major architectural shift from DOM-based scraping to direct JSON data retrieval, offering unprecedented reliability and speed.
 
-## Features
-- **Hybrid Extraction:** Combines **Playwright** for robust session/cookie handling and **Jsoup** for lightning-fast HTML parsing.
-- **Smart Data Structures:** Uses `TreeMap<Date, Float>` to ensure all historical records are automatically sorted chronologically.
-- **Flexible Intervals:** Supports Daily, Weekly, and Monthly data frequencies.
-- **Market Ready:** Hardcoded for US Market standards (Locale.ENGLISH) and precise time-zoning (America/Chicago).
-- **Statistics Support:** Extract Price, Change, Volume, Day's Range, 52-Week Range, Market Cap, and Beta.
+## 🚀 Key Features in v1.2
 
-## Installation
-Ensure you have the following dependencies in your `pom.xml`:
-- `com.microsoft.playwright:playwright`
-- `org.jsoup:jsoup`
-- `org.knowm.xchart:xchart` (for visualization)
+* **JSON-First Architecture:** I have moved away from fragile HTML parsing. I've implemented a robust system that interfaces directly with Yahoo's internal backend endpoints.
+* **Comprehensive Financials:** I added native support for scraping **Balance Sheets**, **Cash Flow Statements**, and **Income Statements**.
+* **Period Flexibility:** You can now toggle seamlessly between **Annual** and **Quarterly** reports using the new `Period` enum.
+* **Modern Date API:** I have fully committed to `java.time.LocalDate` throughout the project, replacing the legacy `java.util.Date` for financial statements.
+* **Performance Optimized:** I am now utilizing `fasterxml.jackson` for lightning-fast JSON processing and Java Reflections for dynamic field mapping to data models.
 
-## Quick Start Example
-This example demonstrates how to initialize a ticker, fetch historical data, and print basic stats.
+## 📦 Requirements & Dependencies
+
+To use this library, ensure your project includes:
+* **Java 11+**
+* **Jackson Databind** (for JSON parsing)
+* **Playwright** (for authentication and cookie management)
+* **Jsoup** (for basic web connectivity and as a utility)
+* **XChart** (optional, used in the provided `Demo.java` for visualization)
+
+## 🛠 Project Structure
+
+```text
+src/de/bustinjieber/main/
+├── yahoo/
+│   ├── statements/    # Data models (BalanceSheet, CashFlow, IncomeStatement)
+│   ├── utils/         # Enums (Period, Frequency)
+│   └── Ticker.java    # Main Entry Point & Data Container
+├── scraper/
+│   ├── Scraper.java   # The core JSON-based scraping engine
+│   └── Parser.java    # Data conversion and date logic
+└── Demo.java          # Implementation showcase & charting
+
+```
+
+## 💻 Quick Start
+
+### Basic Usage
+
+Initialize a `Ticker` and start pulling financial data instantly:
 
 ```java
 import de.bustinjieber.main.yahoo.Ticker;
-import de.bustinjieber.main.yahoo.utils.Frequency;
+import de.bustinjieber.main.yahoo.utils.Period;
 
 public class Main {
     public static void main(String[] args) {
-        // 1. Initialize Ticker with a Symbol
-        Ticker ticker = new Ticker("UPS");
-
-        // 2. Fetch Historical Data (e.g., Monthly)
-        // This triggers the hybrid Playwright/Jsoup engine
-        ticker.getHistoricals(Frequency.Monthly);
-
-        // 3. Access Real-Time Stats
-        System.out.println("Current Price: " + ticker.getPrice());
-        System.out.println("Market Cap: " + ticker.getMarketCap());
-
-        // 4. Access Historical Data (automatically sorted)
-        ticker.getHistoricalClose().forEach((date, price) -> {
-            System.out.println(date + " - Close: $" + price);
+        // Initialize ticker with debug mode enabled
+        Ticker apple = new Ticker("AAPL", true);
+        
+        // Fetch and print Quarterly Balance Sheets
+        apple.getBalanceSheets(Period.Quarterly).forEach((date, sheet) -> {
+            System.out.println(date + ": Total Assets -> $ " + sheet.getTotalAssets());
         });
     }
 }
+
 ```
 
-## How it Works
-1. **Playwright Phase:** The engine launches a headless Chromium instance to navigate to Yahoo and accept cookie consent dialogs.
-2. **Session Transfer:** Extracted session cookies are passed to Jsoup.
-3. **Jsoup Phase:** The engine performs a direct GET request using the validated session to pull historical tables via optimized CSS selectors.
+### Historical Data
 
-## Roadmap
-- [ ] Add fundamental statistics (P/E Ratio, EPS, Dividends).
-- [ ] Implement asynchronous multi-ticker scraping.
-- [ ] Add CSV/JSON export functionality.
+You can retrieve historical stock prices with customizable frequencies:
 
-## License
-Initial Release v1.0 - Developed by bustinjieber
+```java
+import de.bustinjieber.main.yahoo.utils.Frequency;
+
+ticker.getHistoricals(Frequency.Daily);
+System.out.println("Latest Close: " + ticker.getHistoricalClose().lastEntry());
+
+```
+
+```
+
+```
