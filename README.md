@@ -69,7 +69,3 @@ ticker.getHistoricals(Frequency.Daily);
 System.out.println("Latest Close: " + ticker.getHistoricalClose().lastEntry());
 
 ```
-
-```
-
-```
